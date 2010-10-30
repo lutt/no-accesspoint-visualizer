@@ -33,8 +33,8 @@ $(function () {
 		var mapCanvas = $('<div></div>');
 		mapCanvas.attr('id', 'mapcanvas');
 		mapCanvas.css({
-			width: '100%',
-			height: '100%'
+			width: isMobileMode ? window.screen.width + 'px' : '100%',
+			height: isMobileMode ? window.screen.height + 'px' : '100%'
 		});
 		$mapContainer.html(mapCanvas);
 
@@ -79,7 +79,7 @@ $(function () {
 
 			$.each(response.results, function (i, item) {
 				var id = item._id.replace(/[^a-f0-9]/g, '');
-				$list.append('<li id="'+id+'"><a href="#" class="point"><strong class="essid">' + item.essid + '</strong><br/><strong>Key:</strong> '+item.wpakey+' &mdash; ' + item.dist + ' meters<br/>'+item._id+'</a></li>');
+				$list.append('<li lat="'+item.loc[0]+'" lng="'+item.loc[1]+'" id="'+id+'"><a href="#" class="point"><strong class="essid">' + item.essid + '</strong><br/><strong>Key:</strong> '+item.wpakey+' &mdash; ' + item.dist + ' meters<br/>'+item._id+'</a></li>');
 
 				if (isMobileMode === false) {
 					var pos = new google.maps.LatLng(item.loc[0], item.loc[1]),
@@ -117,17 +117,43 @@ $(function () {
 		$body.find('li').removeClass('highlighted');		
 		$listEntry.addClass('highlighted');
 
-		markers[id].setIcon(markerImageHighlighted);
+		if (isMobileMode) {
+			$mapContainer.css({
+				display: 'block'
+			});
+			var map = getMap(), i,
+				lat = parseFloat($listEntry.attr("lat")),
+				lng = parseFloat($listEntry.attr("lng")),
+				pos = new google.maps.LatLng(lat, lng);
+			map.setZoom(9);
+			map.setCenter(pos);
 
-		if (activeMarker) {
-			activeMarker.setIcon(markerImageDefault);
+			if (markers.length > 0) {
+				for (i=0; i<markers.length; i++) {
+					markers[i].setMap(null);
+				}
+			}
+
+			markers = [ new google.maps.Marker({
+				map: map,
+				position: pos,
+				icon: markerImageDefault
+			}) ];
+
+			$body.hide();
+		} else {
+			markers[id].setIcon(markerImageHighlighted);
+
+			if (activeMarker) {
+				activeMarker.setIcon(markerImageDefault);
+			}
+
+			if (scroll) {
+				$.scrollTo($listEntry, 800);
+			}
+
+			activeMarker = markers[id];
 		}
-
-		if (!isMobileMode && scroll) {
-			$.scrollTo($listEntry, 800);
-		}
-
-		activeMarker = markers[id];
 	}
 
 	if (navigator.geolocation) {
