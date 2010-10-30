@@ -24,7 +24,7 @@ lng = float(form.getvalue("lng"))
 
 points = []
 
-for point in db["points"].find({"loc": {"$near": [lat,lng]}}).limit(50):
+for point in db["points"].find({"loc": {"$near": [lat,lng]}}).limit(100):
 	points.append(point)
 
 print json.dumps({"error": False, "results": points})

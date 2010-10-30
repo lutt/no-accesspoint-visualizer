@@ -19,7 +19,11 @@ $(function () {
 		$loader = null;
 		$mapContainer = $('#mapcontainer'),
 		mapController = null,
-		isMobileMode = !$mapContainer.is(':visible');
+		markers = [],
+		activeMarker = null,
+		isMobileMode = !$mapContainer.is(':visible'),
+		markerImageDefault = 'http://google-maps-icons.googlecode.com/files/wifi.png',
+		markerImageHighlighted = 'http://google-maps-icons.googlecode.com/files/amphitheater-tourism.png';
 
 	function getMap() {
 		if (mapController !== null) {
@@ -74,26 +78,56 @@ $(function () {
 			$body.html($list);
 
 			$.each(response.results, function (i, item) {
-				$list.append('<li><a href="#" class="point"><strong class="essid">' + item.essid + '</strong><br/><strong>Key:</strong> '+item.wpakey+' &mdash; ' + item.dist + ' meters<br/>'+item._id+'</a></li>');
+				var id = item._id.replace(/[^a-f0-9]/g, '');
+				$list.append('<li id="'+id+'"><a href="#" class="point"><strong class="essid">' + item.essid + '</strong><br/><strong>Key:</strong> '+item.wpakey+' &mdash; ' + item.dist + ' meters<br/>'+item._id+'</a></li>');
 
 				if (isMobileMode === false) {
-					var pos = new google.maps.LatLng(item.loc[0], item.loc[1]);
-					centerCoords.extend(pos);
-					new google.maps.Marker({
-						map: map,
-						position: pos
+					var pos = new google.maps.LatLng(item.loc[0], item.loc[1]),
+						marker = new google.maps.Marker({
+							map: map,
+							position: pos,
+							title: item.essid,
+							icon: markerImageDefault
+						});
+					markers[id] = marker;
+					google.maps.event.addListener(marker, 'click', function () {
+						highlightPoint(id, true);
 					});
+					centerCoords.extend(pos);
 				}
 			});
 
 			if (isMobileMode === false) {
 				map.fitBounds(centerCoords);
 			}
+
+			$body.find('a').click(function () {
+				highlightPoint($(this).parent().attr("id"), false);
+				return false;
+			});
 		});
 	}
 
 	function error(msg) {
 		$body.html('<div id="init-error"><p>Error: ' + msg + '</p></div>');
+	}
+
+	function highlightPoint(id, scroll) {
+		var $listEntry = $('#'+id);
+		$body.find('li').removeClass('highlighted');		
+		$listEntry.addClass('highlighted');
+
+		markers[id].setIcon(markerImageHighlighted);
+
+		if (activeMarker) {
+			activeMarker.setIcon(markerImageDefault);
+		}
+
+		if (!isMobileMode && scroll) {
+			$.scrollTo($listEntry, 800);
+		}
+
+		activeMarker = markers[id];
 	}
 
 	if (navigator.geolocation) {
