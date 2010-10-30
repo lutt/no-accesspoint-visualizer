@@ -1,0 +1,36 @@
+#!/usr/bin/env python
+# encoding: utf-8
+
+import sys
+import re
+
+import pymongo
+from lib import mongodb
+
+class Importer(object):
+	def __init__(self):
+		self.db = mongodb.connect()
+		self.re = re.compile('^N\s([0-9\.\-]+)\s+E\s([0-9\.\-]+)\s.+(privat[a-z0-9]+)\s.+BSS.*?([a-f0-9:]+).*?wpakey: (.*) \)', re.IGNORECASE);
+		self.points = 0
+
+		for line in sys.stdin:
+			self.parse_line(line)
+
+		self.db["points"].create_index([("loc", pymongo.GEO2D)])
+
+		print "Added a total of %d points" % (self.points)
+
+	def parse_line(self, line):
+		match = self.re.match(line.strip())
+		if match:
+			self.add_ap(lat=float(match.group(1)), lng=float(match.group(2)),
+				essid=match.group(3),
+				bssid=match.group(4),
+				wpakey=match.group(5))
+
+	def add_ap(self, lat, lng, bssid, essid, wpakey):
+		self.db['points'].insert({"_id": bssid, "essid": essid, "wpakey": wpakey, "loc": [ lat, lng ]})
+		self.points += 1
+
+if __name__ == "__main__":
+	Importer()
