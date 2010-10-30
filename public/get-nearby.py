@@ -2,7 +2,7 @@
 
 import os, sys
 import cgi
-import json
+import simplejson as json
 
 sys.path.append('..')
 
