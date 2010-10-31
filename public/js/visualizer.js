@@ -143,9 +143,11 @@ $(function () {
 			$body.hide();
 		} else {
 			markers[id].setIcon(markerImageHighlighted);
+			markers[id].setZIndex(10000);
 
 			if (activeMarker) {
 				activeMarker.setIcon(markerImageDefault);
+				activeMarker.setZIndex(undefined);
 			}
 
 			if (scroll) {
